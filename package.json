@@ -6,7 +6,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "jest"
+    "test": "jest",
+    "extract-wordlists": "node scripts/extract-wordlists.js"
   },
   "dependencies": {
     "react": "^18.2.0",
