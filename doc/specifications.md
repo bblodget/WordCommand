@@ -16,6 +16,15 @@
   - Only introduce Redux if/when state complexity requires it, avoiding premature optimization
   - This approach keeps the initial codebase simpler while allowing for scaling as needed
 - **Build System**: Vite for fast development and optimized production builds
+- **Project Structure**:
+  - `/src/components` - React UI components
+  - `/src/game` - Core game logic and mechanics
+  - `/src/hooks` - Custom React hooks
+  - `/src/context` - Context providers and reducers
+  - `/src/assets` - Static assets (sprites, sounds)
+  - `/src/data` - Word lists and game configuration
+  - `/src/utils` - Helper functions and utilities
+  - `/src/types` - TypeScript type definitions
 
 ## 3. Art and Audio Assets
 - **Visual Assets**: 
@@ -48,16 +57,37 @@
 ## 5. Hosting and Deployment
 - **Hosting Platform**: GitHub Pages for static site hosting
 - **CI/CD**: GitHub Actions workflow for automatic deployment when changes are pushed to the main branch
-- **Testing**: Basic Jest tests for core game logic functions
+  - New workflow will be created for GitHub Pages deployment
+- **Testing**: Jest tests for core game logic functions
+  - Priority testing areas:
+    - Word generation and difficulty progression
+    - Collision detection between projectiles and words
+    - WPM calculation and scoring system
+    - Game state management
+- **Offline Support**: Service worker implementation for offline play capability (after core game is working)
 
 ## 6. Performance Considerations
 - **Target Devices**: Desktop and laptop computers with physical keyboards
 - **Optimization**: Canvas rendering optimization for smooth animations
 - **Storage**: Use of localStorage for saving high scores and game settings
-- **Offline Support**: Service worker implementation for offline play capability
 
 ## 7. Development Approach
 - **Version Control**: Git with GitHub repository
 - **Coding Standards**: ESLint and Prettier for code formatting
 - **Documentation**: JSDoc for function documentation
 - **Project Structure**: Component-based architecture with separation of game logic and rendering
+
+## 8. Word Lists and Data Management
+- **Source Files**: LoveToType JSON word lists will be vendored directly in the repository under `/src/data/`
+- **Data Optimization**:
+  - Split word lists by difficulty level into separate JSON files to load progressively
+  - Implement basic lazy loading to fetch higher difficulty words only when needed
+  - Target maximum individual JSON file size of ~100KB to balance load times and HTTP requests
+
+## 9. Scoring System
+- **WPM Calculation**: Calculate words per minute based on completed words in a rolling 10-second window, multiplied by 6
+- **Accuracy**: Percentage of correctly typed characters vs. total keystrokes
+- **High Score Storage**:
+  - Store entries as `{name, score, peakWPM, accuracy, date}` in localStorage
+  - Limit to top 10 scores sorted by total score
+  - Allow filtering/sorting by different metrics (WPM, accuracy)
