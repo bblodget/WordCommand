@@ -1,0 +1,7 @@
+Could not resolve "./App" from "src/main.tsx"
+file: /mnt/c/Dev/Codex/WordCommand/src/main.tsx
+error during build:
+RollupError: Could not resolve "./App" from "src/main.tsx"
+    at error (file:///mnt/c/Dev/Codex/WordCommand/node_modules/rollup/dist/es/shared/node-entry.js:2287:30)
+    at ModuleLoader.handleInvalidResolvedId (file:///mnt/c/Dev/Codex/WordCommand/node_modules/rollup/dist/es/shared/node-entry.js:24860:24)
+    at file:///mnt/c/Dev/Codex/WordCommand/node_modules/rollup/dist/es/shared/node-entry.js:24822:26
