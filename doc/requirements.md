@@ -57,6 +57,10 @@ Word Command is a typing practice game inspired by the classic 1980s arcade game
 - Bonus points for quick typing speed
 - Combo multipliers for destroying multiple words without errors
 - End-of-level bonus based on cities remaining and typing accuracy
+- WPM (Words Per Minute) tracking that serves as a score multiplier:
+  - Higher WPM increases the point value of destroyed words
+  - WPM calculation updates in real-time during gameplay
+  - Visual feedback shows current WPM and corresponding multiplier
 
 ## User Interface
 
