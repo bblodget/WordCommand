@@ -13,6 +13,10 @@ const initialState: GameState = {
   cities: initialCities,
   nextWordId: 1,
   gameOver: false,
+  score: 0,
+  totalKeystrokes: 0,
+  correctKeystrokes: 0,
+  typedTimestamps: [],
 };
 
 // Reducer to handle game actions
@@ -50,17 +54,36 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       return { ...state, words, cities, gameOver };
     }
     case 'TYPE_CHAR': {
-      const { char } = action.payload;
-      let words = state.words.map(w => {
-        if (w.text[w.typed] === char) {
-          return { ...w, typed: w.typed + 1 };
-        } else {
-          return { ...w, typed: 0 };
-        }
-      });
-      // Remove fully typed words
-      words = words.filter(w => w.typed < w.text.length);
-      return { ...state, words };
+    const { char } = action.payload;
+    const now = Date.now();
+    // Increment total keystrokes
+    let totalKeystrokes = state.totalKeystrokes + 1;
+    // Determine if keystroke matches any word
+    const correct = state.words.some(w => w.text[w.typed] === char);
+    let correctKeystrokes = state.correctKeystrokes + (correct ? 1 : 0);
+    // Update words and track completed ones
+    let finishedTimestamps = [...state.typedTimestamps];
+    let scoreDelta = 0;
+    const updatedWords = state.words.map(w => {
+      const match = w.text[w.typed] === char;
+      const newTyped = match ? w.typed + 1 : 0;
+      if (match && newTyped === w.text.length) {
+        // Word completed
+        scoreDelta += w.text.length;
+        finishedTimestamps.push(now);
+      }
+      return { ...w, typed: newTyped };
+    });
+    // Remove fully typed words
+    const words = updatedWords.filter(w => w.typed < w.text.length);
+    return {
+      ...state,
+      words,
+      score: state.score + scoreDelta,
+      totalKeystrokes,
+      correctKeystrokes,
+      typedTimestamps: finishedTimestamps,
+    };
     }
     default:
       return state;

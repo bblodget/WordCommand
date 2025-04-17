@@ -19,6 +19,12 @@ export interface GameState {
   cities: City[];
   nextWordId: number;
   gameOver: boolean;
+  // Scoring and stats
+  score: number;
+  totalKeystrokes: number;
+  correctKeystrokes: number;
+  // Timestamps (ms) for completed words for WPM calculation
+  typedTimestamps: number[];
 }
 
 // Actions for game state management
