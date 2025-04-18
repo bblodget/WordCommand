@@ -2,20 +2,21 @@ import React, { useContext, useRef, useEffect, useState } from 'react';
 import { GameContext } from '../context/GameContext';
 import { Word, City } from '../types/game';
 
-// Add a star field state
+// Star field configuration
 interface Star {
     x: number;
     y: number;
     size: number;
-    opacity: number;
+    brightness: number;
     twinkleSpeed: number;
-    twinkleDirection: 1 | -1;
 }
 
 const GameCanvas: React.FC = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const { state, dispatch } = useContext(GameContext);
     const { words, cities, gameOver, level, wave } = state;
+    const animationRef = useRef<number>(0);
+    const starsRef = useRef<Star[]>([]);
 
     // State to track level/wave changes for notifications
     const [showLevelUp, setShowLevelUp] = useState(false);
@@ -23,31 +24,20 @@ const GameCanvas: React.FC = () => {
     const [prevLevel, setPrevLevel] = useState(level);
     const [prevWave, setPrevWave] = useState(wave);
 
-    // Create a star field
-    const [stars, setStars] = useState<Star[]>([]);
-    const [lastFrameTime, setLastFrameTime] = useState(0);
-
-    // Initialize star field
+    // Initialize star field once
     useEffect(() => {
-        // Create 100 stars
-        const newStars: Star[] = [];
-        const canvas = canvasRef.current;
-        if (canvas) {
-            const width = canvas.width;
-            const height = canvas.height;
-
-            for (let i = 0; i < 100; i++) {
-                newStars.push({
-                    x: Math.random() * width,
-                    y: Math.random() * height,
-                    size: Math.random() * 2 + 0.5, // 0.5 - 2.5 size
-                    opacity: Math.random() * 0.8 + 0.2, // 0.2 - 1.0 opacity
-                    twinkleSpeed: Math.random() * 0.6 + 0.2, // 0.2 - 0.8 speed
-                    twinkleDirection: Math.random() > 0.5 ? 1 : -1
-                });
-            }
-            setStars(newStars);
+        // Create 150 stars with different properties
+        const stars: Star[] = [];
+        for (let i = 0; i < 150; i++) {
+            stars.push({
+                x: Math.random() * 800,
+                y: Math.random() * 600,
+                size: Math.random() * 1.5 + 0.5,
+                brightness: Math.random(),
+                twinkleSpeed: 0.3 + Math.random() * 0.7,
+            });
         }
+        starsRef.current = stars;
     }, []);
 
     // Sound effects function
@@ -155,7 +145,7 @@ const GameCanvas: React.FC = () => {
         };
     }, []);
 
-    // Drawing logic
+    // Main animation and drawing logic in a single useEffect
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -163,52 +153,48 @@ const GameCanvas: React.FC = () => {
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        const animationFrame = () => {
-            // Calculate delta time for smooth animation
-            const now = performance.now();
-            const deltaTime = (now - lastFrameTime) / 1000; // in seconds
-            setLastFrameTime(now);
+        let lastTime = 0;
+
+        const animate = (time: number) => {
+            // Calculate delta time
+            const deltaTime = lastTime ? (time - lastTime) / 1000 : 0.016;
+            lastTime = time;
 
             // Clear canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw background with subtle gradient
+            // Draw background gradient
             const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            gradient.addColorStop(0, '#000033');
+            gradient.addColorStop(0, '#000044');
             gradient.addColorStop(1, '#000022');
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw stars with twinkling effect
-            setStars(prevStars => {
-                return prevStars.map(star => {
-                    // Calculate new opacity based on twinkling
-                    let newOpacity = star.opacity + (star.twinkleSpeed * star.twinkleDirection * deltaTime);
+            // Draw stars
+            const stars = starsRef.current;
+            const now = time / 1000; // Current time in seconds for twinkling
 
-                    // Reverse direction if reaching min/max
-                    let newDirection = star.twinkleDirection;
-                    if (newOpacity >= 1) {
-                        newOpacity = 1;
-                        newDirection = -1;
-                    } else if (newOpacity <= 0.2) {
-                        newOpacity = 0.2;
-                        newDirection = 1;
-                    }
+            for (let i = 0; i < stars.length; i++) {
+                const star = stars[i];
 
-                    // Draw the star
-                    ctx.fillStyle = `rgba(255, 255, 255, ${newOpacity})`;
+                // Calculate twinkling effect
+                const twinkle = Math.sin(now * star.twinkleSpeed) * 0.5 + 0.5;
+                const opacity = 0.2 + star.brightness * twinkle * 0.8;
+
+                // Draw star
+                ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Larger stars get a subtle glow
+                if (star.size > 1.5) {
+                    ctx.fillStyle = `rgba(200, 220, 255, ${opacity * 0.3})`;
                     ctx.beginPath();
-                    ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                    ctx.arc(star.x, star.y, star.size * 2, 0, Math.PI * 2);
                     ctx.fill();
-
-                    // Return updated star
-                    return {
-                        ...star,
-                        opacity: newOpacity,
-                        twinkleDirection: newDirection as 1 | -1
-                    };
-                });
-            });
+                }
+            }
 
             // Draw cities
             cities.forEach(city => {
@@ -236,7 +222,7 @@ const GameCanvas: React.FC = () => {
             words.forEach(word => {
                 // Draw word background for better visibility
                 const wordWidth = ctx.measureText(word.text).width;
-                ctx.fillStyle = 'rgba(0, 0, 50, 0.6)';
+                ctx.fillStyle = 'rgba(0, 0, 80, 0.5)';
                 ctx.fillRect(
                     word.x - 2,
                     word.y - 2,
@@ -274,37 +260,42 @@ const GameCanvas: React.FC = () => {
             });
 
             // Draw completed words with fade-out effect
+            const currentTime = Date.now();
             state.completedWords.forEach(word => {
-                const ageMs = now - word.timestamp;
+                const ageMs = currentTime - word.timestamp;
                 const opacity = 1.0 - (ageMs / 1000); // Fade out over 1 second
 
                 // Skip if fully faded out
                 if (opacity <= 0) return;
 
                 // Animate the completed word - move up slightly with fading
-                const offsetY = -10 * (ageMs / 1000); // Move up 10px over 1 second
+                const offsetY = -20 * (ageMs / 1000); // Move up 20px over 1 second
 
                 // Draw the word with fading opacity
                 ctx.font = '18px monospace';
-                ctx.fillStyle = `rgba(0, 255, 0, ${opacity})`;
+                ctx.fillStyle = `rgba(50, 255, 50, ${opacity})`;
                 ctx.fillText(word.text, word.x, word.y + offsetY + 16);
 
                 // Draw score with fading and floating
                 ctx.font = '16px monospace';
-                ctx.fillStyle = `rgba(255, 255, 0, ${opacity})`;
+                ctx.fillStyle = `rgba(255, 255, 50, ${opacity})`;
                 ctx.fillText(`+${word.score}`, word.x + ctx.measureText(word.text).width + 10, word.y + offsetY + 16);
             });
 
-            // Request next frame
-            requestAnimationFrame(animationFrame);
+            // Continue animation loop
+            animationRef.current = requestAnimationFrame(animate);
         };
 
         // Start animation
-        const animationId = requestAnimationFrame(animationFrame);
+        animationRef.current = requestAnimationFrame(animate);
 
         // Cleanup
-        return () => cancelAnimationFrame(animationId);
-    }, [lastFrameTime]);
+        return () => {
+            if (animationRef.current) {
+                cancelAnimationFrame(animationRef.current);
+            }
+        };
+    }, [words, cities, state.completedWords]);
 
     // Handle restart
     const handleRestart = () => {
