@@ -7,7 +7,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "jest",
-    "extract-wordlists": "node scripts/extract-wordlists.js"
+    "extract-wordlists": "node scripts/extract-wordlists.js",
+    "migrate-levels": "node scripts/migrate-levels.js"
   },
   "dependencies": {
     "react": "^18.2.0",

@@ -39,13 +39,26 @@ Word Command is a typing practice game inspired by the classic 1980s arcade game
 
 ## Game Progression
 
-### Levels
-- Game difficulty increases with each level
-- Higher levels introduce:
-  - More words simultaneously on screen
-  - Faster falling words
-  - Longer/more complex words
-  - Special word types (see below)
+### Dynamic Difficulty System
+- Adaptive speed scaling based on player's WPM
+  - Base falling speed adjusts according to player typing speed
+  - Challenge multiplier allows players to fine-tune difficulty (80%-120%)
+  - "Flow state detector" increases difficulty during successful streaks
+  - Difficulty decreases after multiple mistakes
+
+### Progressive Word Complexity
+- Level 1: 3-4 letter common words
+- Level 2: 4-5 letter words with common patterns
+- Level 3: 5-7 letter words with more complex combinations
+- Level 4: Specialized vocabulary and technical terms
+- Level 5: Words with difficult letter combinations
+
+### Wave-Based Progression
+- Each level consists of 3-5 waves with fixed word counts
+- Short breathers between waves
+- Final wave in each level features a "boss wave" with rapid-fire words
+- Advance to next level after completing all waves
+- Option to replay levels at increased difficulty for higher score multipliers
 
 ### Special Word Types
 - Power-up words: When destroyed, grant temporary benefits (slowdown, shield city, etc.)
@@ -53,31 +66,35 @@ Word Command is a typing practice game inspired by the classic 1980s arcade game
 - Chain words: Connected words that must be typed in sequence
 
 ## Scoring System
-- Points awarded for each successfully destroyed word
-- Bonus points for quick typing speed
-- Combo multipliers for destroying multiple words without errors
-- End-of-level bonus based on cities remaining and typing accuracy
-- WPM (Words Per Minute) tracking that serves as a score multiplier:
-  - Higher WPM increases the point value of destroyed words
-  - WPM calculation updates in real-time during gameplay
-  - Visual feedback shows current WPM and corresponding multiplier
+- Multi-dimensional scoring:
+  - Base score: Words completed × word length
+  - WPM multiplier: (current WPM / baseline WPM) capped at 3.0x
+  - Accuracy bonus: Perfect typing streaks give exponential bonuses
+  - Survival time bonus: Additional points for keeping cities alive
+
+## Challenge Mechanics
+- Heat-up mode: Automatically increases spawn rate when player is clearing words easily
+- Cool-down mode: Slightly reduces difficulty when multiple cities are destroyed
+- Rush periods: Temporary speed increases with higher score multipliers
+- Special words: Keywords that require alternate typing patterns
 
 ## User Interface
 
 ### Game Screen
-- Top: Score display, level information
+- Top: Score display, level information, current WPM, multiplier
 - Center: Main game area where words fall
 - Bottom: Cities and cannons, remaining lives
 
 ### Statistics Display
 - Words per minute (WPM) tracking
 - Accuracy percentage
+- Current level and wave
 - High score table
 
 ### Visuals
 - Retro arcade aesthetic inspired by Missile Command
 - Modern particle effects for explosions and destroyed words
-- Color-coding for different word types
+- Color-coding for different word types and difficulty levels
 
 ## Technical Requirements
 - Web-based implementation
@@ -85,12 +102,12 @@ Word Command is a typing practice game inspired by the classic 1980s arcade game
 - Responsive design for different screen sizes
 - Works on keyboard-equipped devices (desktop/laptop)
 - All game assets and logic must be client-side (no server requirements)
-- Local storage for saving high scores
+- Local storage for saving high scores and player progression
 
 ## Stretch Goals
 - Sound effects and retro background music
 - Custom word lists (user-defined practice)
-- Difficulty settings (easy, medium, hard)
+- Manual difficulty adjustments
 - Two-player competitive mode
 - Touch typing indicators/guides
 - Accessibility features for different skill levels

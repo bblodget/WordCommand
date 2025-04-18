@@ -1,37 +1,157 @@
-import { useContext, useEffect } from 'react';
+import { useContext, useEffect, useRef } from 'react';
 import { GameContext } from '../context/GameContext';
-import { loadEasyWords } from '../data/index';
+import { loadLevelWords } from '../data/index';
 import { Word } from '../types/game';
 
 // Hook to initialize and run the game loop
 export default function useGameEngine(): void {
   const { state, dispatch } = useContext(GameContext);
-  // Load easy words for initial level
+  
+  // Update baseline WPM when game is over
   useEffect(() => {
-    let easyWords: string[] = [];
-    loadEasyWords().then(mod => {
-      easyWords = (mod.default || mod) as string[];
-    });
-    // Spawn a new word every 2 seconds
-    const spawnInterval = 2000;
-    const intervalId = setInterval(() => {
-      if (!state.gameOver && easyWords.length > 0) {
-        const text = easyWords[Math.floor(Math.random() * easyWords.length)];
-        const x = Math.random() * (800 - text.length * 12);
-        const speed = 40 + Math.random() * 40;
-        const word: Word = {
-          id: state.nextWordId.toString(),
-          text,
-          x,
-          y: 0,
-          speed,
-          typed: 0,
-        };
-        dispatch({ type: 'SPAWN_WORD', payload: word });
+    if (state.gameOver) {
+      const now = Date.now();
+      const windowMs = 30 * 1000; // Look at the last 30 seconds for final WPM calculation
+      const recentCount = state.typedTimestamps.filter(
+        ts => now - ts <= windowMs
+      ).length;
+      const finalWpm = Math.round(recentCount * 2); // words per 30 seconds * 2 = WPM
+      
+      // Update baseline WPM if player achieved a higher rate
+      if (finalWpm > state.baselineWPM) {
+        localStorage.setItem('wordCommand_baselineWPM', finalWpm.toString());
+        console.log(`New baseline WPM: ${finalWpm}`);
       }
-    }, spawnInterval);
-    return () => clearInterval(intervalId);
-  }, [dispatch, state.gameOver, state.nextWordId]);
+    }
+  }, [state.gameOver, state.typedTimestamps, state.baselineWPM]);
+  
+  // Load words for current level and dynamically spawn
+  // Keep a ref to latest state for spawn calculations
+  const stateRef = { current: state as typeof state } as { current: typeof state };
+  useEffect(() => {
+    stateRef.current = state;
+    let levelWords: string[] = [];
+    // Load level word list
+    loadLevelWords(stateRef.current.level).then(words => {
+      levelWords = words.filter(w => w.length > 1);
+      console.log(`Loaded ${levelWords.length} words for level ${stateRef.current.level}`);
+    });
+    
+    // Flag to prevent multiple spawn loops from running
+    let cancelled = false;
+    
+    // Spawn loop using dynamic spawn rate
+    const spawnLoop = async () => {
+      if (cancelled) return;
+      const now = Date.now();
+      // Calculate current WPM from typedTimestamps (last 10s)
+      const windowMs = 10 * 1000;
+      const recentCount = stateRef.current.typedTimestamps.filter(
+        ts => now - ts <= windowMs
+      ).length;
+      const currentWpm = recentCount * 6;
+      // Dynamic spawn rate (words per second)
+      const baseRate = 0.25; // Increased from 0.1 to 0.25 (1 word every 4s at baseline)
+      const wpmFactor = Math.min(1.8, Math.max(0.8, currentWpm / state.baselineWPM));
+      const levelFactor = 1 + (stateRef.current.level * 0.08); // Increased from 0.05 to 0.08
+      
+      // Calculate spawn rate with a cap to prevent overwhelming the player
+      let spawnRate =
+        baseRate * wpmFactor * levelFactor * stateRef.current.difficultyMultiplier * stateRef.current.challengeMultiplier;
+        
+      // Hard cap on spawn rate to prevent too many words
+      const maxSpawnRate = 1.2; // Increased from 0.8 to 1.2 (max 1 word every ~0.83s)
+      spawnRate = Math.min(maxSpawnRate, spawnRate);
+      
+      const interval = 1000 / spawnRate;
+      
+      // Don't spawn if we already have too many words on screen
+      const maxWordsOnScreen = 4 + Math.floor(stateRef.current.level * 1.2); // Increased from 3 to 4 base words
+      
+      // Log spawn rate data for debugging (only occasionally to avoid console spam)
+      if (Math.random() < 0.05) {
+        console.log(`Spawn Rate: ${spawnRate.toFixed(2)} words/s (interval: ${Math.round(interval)}ms)`);
+        console.log(`Words on screen: ${stateRef.current.words.length}/${maxWordsOnScreen}`);
+        console.log(`Factors: base=${baseRate}, wpm=${wpmFactor.toFixed(2)}, level=${levelFactor.toFixed(2)}, diff=${stateRef.current.difficultyMultiplier.toFixed(2)}`);
+      }
+      
+      // Schedule next spawn
+      setTimeout(() => {
+        if (!stateRef.current.gameOver && levelWords.length > 0 && 
+            stateRef.current.words.length < maxWordsOnScreen) {
+          const text =
+            levelWords[
+              Math.floor(Math.random() * levelWords.length)
+            ];
+            
+          // Better horizontal distribution - ensure words aren't too close to edges
+          // and divide the screen into sections to avoid overlapping
+          const padding = 50; // Keep words away from edges
+          const availableWidth = 800 - (padding * 2) - (text.length * 12);
+          
+          // Pick a section based on how many words are allowed
+          const sectionCount = maxWordsOnScreen;
+          const sectionWidth = availableWidth / sectionCount;
+          
+          // Find an unoccupied or least crowded section
+          let targetSection = 0;
+          const sectionCounts = Array(sectionCount).fill(0);
+          
+          // Count words in each section
+          stateRef.current.words.forEach(w => {
+            const section = Math.floor((w.x - padding) / sectionWidth);
+            if (section >= 0 && section < sectionCount) {
+              sectionCounts[section]++;
+            }
+          });
+          
+          // Find least crowded section
+          let minCount = Number.MAX_VALUE;
+          for (let i = 0; i < sectionCount; i++) {
+            if (sectionCounts[i] < minCount) {
+              minCount = sectionCounts[i];
+              targetSection = i;
+            }
+          }
+          
+          // Position in the chosen section with some randomness
+          const x = padding + (targetSection * sectionWidth) + (Math.random() * 0.8 * sectionWidth);
+          
+          // Adjust speed based on level and difficulty
+          const baseSpeed = 25 + (state.level * 4); // Increased from 20 to 25, and level scaling from 3 to 4
+          const speedVariation = 15; // Increased from 10 to 15
+          const speed = 
+            baseSpeed + 
+            (Math.random() * speedVariation) * 
+            stateRef.current.difficultyMultiplier * 
+            stateRef.current.challengeMultiplier;
+          
+          const word: Word = {
+            id: stateRef.current.nextWordId.toString(),
+            text,
+            x,
+            y: 0,
+            speed,
+            typed: 0,
+          };
+          dispatch({ type: 'SPAWN_WORD', payload: word });
+        }
+        
+        // CRITICAL FIX: Only continue the spawn loop if the game is not over
+        if (!stateRef.current.gameOver) {
+          spawnLoop();
+        }
+      }, interval);
+    };
+    
+    // Start the spawn loop
+    spawnLoop();
+    
+    // Cleanup function
+    return () => {
+      cancelled = true;
+    };
+  }, [dispatch, state.level]); // Only re-run when level changes, not on every state change
 
   // Main game loop for physics
   useEffect(() => {
