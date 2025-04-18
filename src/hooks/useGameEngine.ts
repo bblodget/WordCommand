@@ -51,22 +51,22 @@ export default function useGameEngine(): void {
       ).length;
       const currentWpm = recentCount * 6;
       // Dynamic spawn rate (words per second)
-      const baseRate = 0.3; // Increased from 0.25 to 0.3
-      const wpmFactor = Math.min(2.0, Math.max(0.8, currentWpm / state.baselineWPM));
-      const levelFactor = 1 + (stateRef.current.level * 0.15); // Increased from 0.08 to 0.15
+      const baseRate = 0.4; // Increased from 0.3 to 0.4
+      const wpmFactor = Math.min(2.5, Math.max(0.8, currentWpm / state.baselineWPM)); // Increased max from 2.0 to 2.5
+      const levelFactor = 1 + (stateRef.current.level * 0.25); // Increased from 0.15 to 0.25
       
       // Calculate spawn rate with a cap to prevent overwhelming the player
       let spawnRate =
         baseRate * wpmFactor * levelFactor * stateRef.current.difficultyMultiplier * stateRef.current.challengeMultiplier;
         
       // Hard cap on spawn rate to prevent too many words
-      const maxSpawnRate = 1.5; // Increased from 1.2 to 1.5
+      const maxSpawnRate = 2.0; // Increased from 1.5 to 2.0
       spawnRate = Math.min(maxSpawnRate, spawnRate);
       
       const interval = 1000 / spawnRate;
       
       // Don't spawn if we already have too many words on screen
-      const maxWordsOnScreen = 4 + Math.floor(stateRef.current.level * 1.5); // Increased level scaling from 1.2 to 1.5
+      const maxWordsOnScreen = 5 + Math.floor(stateRef.current.level * 2.0); // Increased from 4 + level*1.5 to 5 + level*2.0
       
       // Log spawn rate data for debugging (only occasionally to avoid console spam)
       if (Math.random() < 0.05) {
@@ -125,8 +125,8 @@ export default function useGameEngine(): void {
           } while (attempts <= 5);
           
           // Adjust speed based on level and difficulty
-          const baseSpeed = 30 + (state.level * 6); // Increased from 25 to 30, and level scaling from 4 to 6
-          const speedVariation = 20; // Increased from 15 to 20
+          const baseSpeed = 35 + (state.level * 8); // Increased from 30 to 35, and level scaling from 6 to 8
+          const speedVariation = 25; // Increased from 20 to 25
           const speed = 
             baseSpeed + 
             (Math.random() * speedVariation) * 
