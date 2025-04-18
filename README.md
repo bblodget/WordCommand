@@ -20,4 +20,10 @@ npm run build
 
 # Preview production build
 npm run preview
-``` 
+```
+
+## Deployment
+
+This project uses GitHub Pages for deployment. The `/docs` directory contains the production build of the application (not documentation) and is used by GitHub Pages. Our actual documentation is in the `/doc` directory.
+
+When you run `npm run build`, Vite will output the production files to the `/docs` folder, which is then published automatically through GitHub Pages. 
