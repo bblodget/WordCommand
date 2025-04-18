@@ -55,6 +55,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         }
         case 'NEXT_WAVE': {
             // Start next wave
+            console.log(`Wave advancing from ${state.wave} to ${state.wave + 1}`);
             return {
                 ...state,
                 wave: state.wave + 1,
@@ -64,6 +65,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         case 'LEVEL_UP': {
             // Go to next level, reset to wave 1
             const nextLevel = Math.min(5, state.level + 1);
+            console.log(`Level advancing from ${state.level} to ${nextLevel}, wave reset to 1`);
             return {
                 ...state,
                 level: nextLevel,
@@ -120,13 +122,13 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                 : state.consecutiveFailures + 1;
             let difficultyMultiplier = state.difficultyMultiplier;
             // Heat-up
-            if (consecutiveSuccesses >= 4) {
-                difficultyMultiplier = Math.min(1.5, difficultyMultiplier * 1.1);
+            if (consecutiveSuccesses >= 3) {
+                difficultyMultiplier = Math.min(1.8, difficultyMultiplier * 1.15);
                 consecutiveSuccesses = 0;
             }
             // Cool-down
-            if (consecutiveFailures >= 4) {
-                difficultyMultiplier = Math.max(0.7, difficultyMultiplier * 0.85);
+            if (consecutiveFailures >= 3) {
+                difficultyMultiplier = Math.max(0.6, difficultyMultiplier * 0.85);
                 consecutiveFailures = 0;
             }
             // Update words and score tracking
@@ -152,6 +154,11 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                 if (match && newTyped === w.text.length) {
                     // Word completed
                     wordsCompletedInWave++;
+
+                    // Dispatch word completion event for sound effect
+                    if (typeof window !== 'undefined') {
+                        window.dispatchEvent(new CustomEvent('wordCompleted'));
+                    }
 
                     // Check for wave/level advancement
                     if (wordsCompletedInWave >= WORDS_PER_WAVE) {
@@ -198,7 +205,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
             // Update next wave or level after processing all words
             if (shouldAdvanceWave) {
                 // Check if we should level up
-                if (state.wave >= WAVES_PER_LEVEL) {
+                if (state.wave >= WAVES_PER_LEVEL - 1) {
                     shouldLevelUp = true;
                 }
             }
@@ -218,11 +225,15 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
             };
 
             // After the game state is updated, dispatch next wave or level up if needed
-            if (shouldLevelUp) {
-                setTimeout(() => dispatch({ type: 'LEVEL_UP' }), 500);
-            } else if (shouldAdvanceWave) {
-                setTimeout(() => dispatch({ type: 'NEXT_WAVE' }), 500);
-            }
+            setTimeout(() => {
+                if (shouldLevelUp) {
+                    dispatch({ type: 'LEVEL_UP' });
+                    console.log("LEVEL UP to Level " + (state.level + 1));
+                } else if (shouldAdvanceWave) {
+                    dispatch({ type: 'NEXT_WAVE' });
+                    console.log("NEXT WAVE to Wave " + (state.wave + 1));
+                }
+            }, 100);
 
             return newState;
         }

@@ -47,13 +47,19 @@ const HUD: React.FC = () => {
         <div className="absolute top-2 left-2 text-white font-mono space-y-2 z-10">
             <div className="font-bold">
                 Level {state.level} - Wave {state.wave}
-                <div className="w-full bg-gray-700 h-2 mt-1 rounded">
+                <div className="w-full bg-gray-700 h-3 mt-1 rounded overflow-hidden">
                     <div
-                        className="bg-blue-500 h-2 rounded"
+                        className="bg-blue-500 h-3 rounded relative transition-all duration-300"
                         style={{ width: `${(wordsCompletedInWave / WORDS_PER_WAVE) * 100}%` }}
-                    />
+                    >
+                        {wordsCompletedInWave > 0 && (
+                            <span className="absolute inset-0 flex items-center justify-center text-xs text-white font-bold">
+                                {wordsCompletedInWave}/{WORDS_PER_WAVE}
+                            </span>
+                        )}
+                    </div>
                 </div>
-                <div className="text-xs text-right">{wordsCompletedInWave}/{WORDS_PER_WAVE} words</div>
+                <div className="text-xs text-right">{WORDS_PER_WAVE - wordsCompletedInWave} words to next wave</div>
             </div>
             <div>Score: {score}</div>
             <div>WPM: {wpm}</div>

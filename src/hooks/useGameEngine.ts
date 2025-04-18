@@ -51,22 +51,22 @@ export default function useGameEngine(): void {
       ).length;
       const currentWpm = recentCount * 6;
       // Dynamic spawn rate (words per second)
-      const baseRate = 0.25; // Increased from 0.1 to 0.25 (1 word every 4s at baseline)
-      const wpmFactor = Math.min(1.8, Math.max(0.8, currentWpm / state.baselineWPM));
-      const levelFactor = 1 + (stateRef.current.level * 0.08); // Increased from 0.05 to 0.08
+      const baseRate = 0.3; // Increased from 0.25 to 0.3
+      const wpmFactor = Math.min(2.0, Math.max(0.8, currentWpm / state.baselineWPM));
+      const levelFactor = 1 + (stateRef.current.level * 0.15); // Increased from 0.08 to 0.15
       
       // Calculate spawn rate with a cap to prevent overwhelming the player
       let spawnRate =
         baseRate * wpmFactor * levelFactor * stateRef.current.difficultyMultiplier * stateRef.current.challengeMultiplier;
         
       // Hard cap on spawn rate to prevent too many words
-      const maxSpawnRate = 1.2; // Increased from 0.8 to 1.2 (max 1 word every ~0.83s)
+      const maxSpawnRate = 1.5; // Increased from 1.2 to 1.5
       spawnRate = Math.min(maxSpawnRate, spawnRate);
       
       const interval = 1000 / spawnRate;
       
       // Don't spawn if we already have too many words on screen
-      const maxWordsOnScreen = 4 + Math.floor(stateRef.current.level * 1.2); // Increased from 3 to 4 base words
+      const maxWordsOnScreen = 4 + Math.floor(stateRef.current.level * 1.5); // Increased level scaling from 1.2 to 1.5
       
       // Log spawn rate data for debugging (only occasionally to avoid console spam)
       if (Math.random() < 0.05) {
@@ -86,40 +86,47 @@ export default function useGameEngine(): void {
             
           // Better horizontal distribution - ensure words aren't too close to edges
           // and divide the screen into sections to avoid overlapping
-          const padding = 50; // Keep words away from edges
+          const padding = 30; // Reduced from 50 to 30 to use more of the screen
           const availableWidth = 800 - (padding * 2) - (text.length * 12);
           
-          // Pick a section based on how many words are allowed
-          const sectionCount = maxWordsOnScreen;
-          const sectionWidth = availableWidth / sectionCount;
+          // Simplified positioning - randomly place words across the entire screen width
+          // but avoid overlapping by checking for collisions with existing words
+          let x;
+          let attempts = 0;
+          const wordWidth = text.length * 12;
+          const safetyMargin = 20; // Minimum horizontal distance between words
           
-          // Find an unoccupied or least crowded section
-          let targetSection = 0;
-          const sectionCounts = Array(sectionCount).fill(0);
-          
-          // Count words in each section
-          stateRef.current.words.forEach(w => {
-            const section = Math.floor((w.x - padding) / sectionWidth);
-            if (section >= 0 && section < sectionCount) {
-              sectionCounts[section]++;
+          do {
+            // Random position across the entire available width
+            x = padding + Math.random() * availableWidth;
+            
+            // Check for collisions with existing words
+            const hasCollision = stateRef.current.words.some(existingWord => {
+              const existingWordWidth = existingWord.text.length * 12;
+              const existingWordLeft = existingWord.x;
+              const existingWordRight = existingWordLeft + existingWordWidth;
+              
+              const newWordLeft = x;
+              const newWordRight = newWordLeft + wordWidth;
+              
+              // Check if the new word overlaps with an existing word
+              // with safety margin on both sides
+              return (
+                (newWordLeft - safetyMargin < existingWordRight) && 
+                (newWordRight + safetyMargin > existingWordLeft)
+              );
+            });
+            
+            if (!hasCollision || attempts > 5) {
+              break; // Either no collision or we've tried enough times
             }
-          });
-          
-          // Find least crowded section
-          let minCount = Number.MAX_VALUE;
-          for (let i = 0; i < sectionCount; i++) {
-            if (sectionCounts[i] < minCount) {
-              minCount = sectionCounts[i];
-              targetSection = i;
-            }
-          }
-          
-          // Position in the chosen section with some randomness
-          const x = padding + (targetSection * sectionWidth) + (Math.random() * 0.8 * sectionWidth);
+            
+            attempts++;
+          } while (attempts <= 5);
           
           // Adjust speed based on level and difficulty
-          const baseSpeed = 25 + (state.level * 4); // Increased from 20 to 25, and level scaling from 3 to 4
-          const speedVariation = 15; // Increased from 10 to 15
+          const baseSpeed = 30 + (state.level * 6); // Increased from 25 to 30, and level scaling from 4 to 6
+          const speedVariation = 20; // Increased from 15 to 20
           const speed = 
             baseSpeed + 
             (Math.random() * speedVariation) * 
