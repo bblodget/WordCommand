@@ -1,0 +1,1 @@
+const a=["alarm","bagel","basis","began","claim","early","every","green","hello","magma","offer","paper","point","public","quark","quick","quill","quite","reply","right","small","snowy","start","table","topaz","world","yearn","zebra","zippy"];export{a as default};
